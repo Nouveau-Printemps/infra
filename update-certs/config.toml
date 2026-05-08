@@ -4,3 +4,4 @@ domains = [
     "example.org",
     "*.example.org",
 ]
+http_port = 80
