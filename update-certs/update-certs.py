@@ -36,11 +36,20 @@ def gen_base(group, data, star):
     if server != None: 
         cmd.append("--server") 
         cmd.append(server)
-    for domain in data[::-1]:
+    for domain in data:
         if star == is_wildcard(domain): 
             cmd.append("-d")
             cmd.append(domain)
     return cmd
+
+ext = ["crt", "issuer.crt", "key", "json", "pem"]
+
+def move_files(group: str, data):
+    for file in os.listdir(group):
+        for e in ext:
+            m = max(-len(e), -len(file)-1)
+            if file[m:] == e and file[:m-1] in data:
+                os.rename(file, group + "." + e)
 
 def run(group, data, cmd):
     http = gen_base(group, data, False)
@@ -54,6 +63,7 @@ def run(group, data, cmd):
         if res.returncode != 0:
             syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stderr))
             return False
+        move_files(group, data)
     dns = gen_base(group, data, True)
     if dns != None:
         if environ["INFOMANIAK_ACCESS_TOKEN_FILE"] == "":
@@ -64,8 +74,9 @@ def run(group, data, cmd):
         dns.append(cmd)
         res = subprocess.run(dns, env = environ)
         if res.returncode != 0:
-            syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stderr))
+            syslog.syslog(syslog.LOG_ERR, "cannot generate wildcard certificates for " + group + ": " + str(res.stderr))
             return False
+        move_files("_." + group, data)
     return True
 
 for group in cfg.get("group", []):
