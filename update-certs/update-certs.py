@@ -63,6 +63,7 @@ def run(group, data, cmd):
         res = subprocess.run(http)
         if res.returncode != 0:
             syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stderr))
+            return False
     dns = gen_base(group, data, True)
     if dns != None:
         if environ["INFOMANIAK_ACCESS_TOKEN_FILE"] == "":
@@ -74,6 +75,8 @@ def run(group, data, cmd):
         res = subprocess.run(dns, env = environ)
         if res.returncode != 0:
             syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stderr))
+            return False
+    return True
 
 for (group, d) in domains.items():
     root_path = path.join(group, "certificates")
@@ -87,7 +90,7 @@ for (group, d) in domains.items():
             to_renew.add(data)
         else:
             to_create.add(data)
-    run(group, to_create, "run")
-    run(group, to_renew, "renew")
+    a = run(group, to_create, "run")
+    b = run(group, to_renew, "renew")
     os.chmod(root_path, 0o700)
-    syslog.syslog("certificates generated for " + group)
+    if a and b: syslog.syslog("certificates generated for " + group)
