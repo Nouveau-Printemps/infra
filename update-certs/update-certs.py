@@ -46,12 +46,15 @@ environ["INFOMANIAK_ACCESS_TOKEN_FILE"] = cfg.get("infomaniak_token_file", "")
 server = environ.get("ACME_SERVER")
 
 def gen_base(group, data, star):
-    domains = [f"--domains=\"{domain}\"" for (domain, wildcard) in data if star == wildcard]
-    if len(domains) == 0:
-        return None
-    cmd = ["lego", f"--email=\"{cfg.get("email")}\"", f"--path={group}"]
-    for v in domains:
-        cmd.append(v)
+    if len(data) == 0: return None
+    cmd = ["lego", "--email", cfg.get("email"), f"--path={group}", "-a", "--pem"]
+    if server != None: 
+        cmd.append("--server") 
+        cmd.append(server)
+    for (domain, wildcard) in data:
+        if star == wildcard: 
+            cmd.append("-d")
+            cmd.append(domain)
     return cmd
 
 def run(group, data, cmd):
@@ -59,8 +62,7 @@ def run(group, data, cmd):
     if http != None:
         http.append("--http")
         http.append("--http.port")
-        http.append(str(cfg.get("http_port", 80)))
-        if server != None: http.append(f"--server={server}")
+        http.append(":" + str(cfg.get("http_port", 80)))
         http.append(cmd)
         print(http)
         res = subprocess.run(http)
@@ -74,7 +76,6 @@ def run(group, data, cmd):
             exit(3)
         dns.append("--dns")
         dns.append("infomaniak")
-        if server != None: http.append(f"--server={server}")
         dns.append(cmd)
         res = subprocess.run(dns, env = environ)
         if res.returncode != 0:
