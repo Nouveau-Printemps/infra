@@ -43,6 +43,8 @@ with open(cfg_path, "rb") as f:
 environ = os.environ.copy()
 environ["INFOMANIAK_ACCESS_TOKEN_FILE"] = cfg.get("infomaniak_token_file", "")
 
+server = environ.get("ACME_SERVER")
+
 def gen_base(group, data, star):
     domains = [f"--domains=\"{domain}\"" for (domain, wildcard) in data if star == wildcard]
     if len(domains) == 0:
@@ -57,7 +59,8 @@ def run(group, data, cmd):
     if http != None:
         http.append("--http")
         http.append("--http.port")
-        http.append(cfg.get("http_port", 80))
+        http.append(str(cfg.get("http_port", 80)))
+        if server != None: http.append(f"--server={server}")
         http.append(cmd)
         print(http)
         res = subprocess.run(http)
@@ -71,6 +74,7 @@ def run(group, data, cmd):
             exit(3)
         dns.append("--dns")
         dns.append("infomaniak")
+        if server != None: http.append(f"--server={server}")
         dns.append(cmd)
         res = subprocess.run(dns, env = environ)
         if res.returncode != 0:
