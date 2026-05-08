@@ -1,0 +1,6 @@
+email = "uwu@example.org"
+certs = "/var/certs" 
+domains = [
+    "example.org",
+    "*.example.org",
+]
