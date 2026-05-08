@@ -51,14 +51,14 @@ def run(group, data, cmd):
     base.append("--http.port")
     base.append(":" + str(cfg.get("http_port", 80)))
     if has_wildcard:
-        if environ["INFOMANIAK_ACCESS_TOKEN_FILE"] == "":
-            syslog.syslog(syslog.LOG_ERR, "cannot manage wildcard certificates without a token file")
+        if environ["INFOMANIAK_ACCESS_TOKEN_FILE"] == "" and environ["INFOMANIAK_ACCESS_TOKEN"]:
+            syslog.syslog(syslog.LOG_ERR, "cannot manage wildcard certificates without a token")
             exit(3)
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
     print(base)
-    res = subprocess.run(base)
+    res = subprocess.run(base, env = environ)
     if res.returncode != 0:
         syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stdout))
         return False
