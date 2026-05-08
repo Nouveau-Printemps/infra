@@ -13,46 +13,31 @@ if len(args) != 1:
     print("Usage: update-certs <config-file>")
     exit(1)
 
-syslog.openlog("update-certs")
+syslog.openlog("update-certs", facility=syslog.LOG_LOCAL1)
 
-cfg_path = args[0]
 cfg = {}
 
-# key = domain group
-# value = dict[domain, is wildcard]
-domains: dict[str, dict[str, bool]] = {}
-
-with open(cfg_path, "rb") as f:
+with open(args[0], "rb") as f:
     cfg = tomllib.load(f)
-    os.chdir(cfg.get("certs", "/var/certs"))
-    for domain in cfg.get("domains", []):
-        domain = domain.strip("\n")
-        if len(domain) == 0:
-            continue
-        group = ".".join(domain.split(".")[-2:])
-        try:
-            os.mkdir(group)
-        except FileExistsError:
-            0
-        wildcard = domain.startswith("*")
-        if domains.get(group) == None:
-            domains[group] = {domain: wildcard}
-        else:
-            domains[group][domain] = wildcard
+
+os.chdir(cfg.get("certs", "/var/certs"))
 
 environ = os.environ.copy()
 environ["INFOMANIAK_ACCESS_TOKEN_FILE"] = cfg.get("infomaniak_token_file", "")
 
 server = environ.get("ACME_SERVER")
 
+def is_wildcard(domain):
+    return domain[0] == "*"
+
 def gen_base(group, data, star):
     if len(data) == 0: return None
-    cmd = ["lego", "--email", cfg.get("email"), f"--path={group}", "-a", "--pem"]
+    cmd = ["lego", "--email", cfg.get("email"), "--path", group, "-a", "--pem"]
     if server != None: 
         cmd.append("--server") 
         cmd.append(server)
-    for (domain, wildcard) in data:
-        if star == wildcard: 
+    for domain in data[::-1]:
+        if star == is_wildcard(domain): 
             cmd.append("-d")
             cmd.append(domain)
     return cmd
@@ -83,19 +68,12 @@ def run(group, data, cmd):
             return False
     return True
 
-for (group, d) in domains.items():
-    root_path = path.join(group, "certificates")
-    # domain, wildcard
-    to_create: set[tuple[str, bool]] = set()
-    to_renew: set[tuple[str, bool]] = set()
-    for (domain, wildcard) in d.items():
-        data = (domain, wildcard)
-        domain += ".key"
-        if path.exists(path.join(root_path, domain if not wildcard else "_"+domain[1:])):
-            to_renew.add(data)
-        else:
-            to_create.add(data)
-    a = run(group, to_create, "run")
-    b = run(group, to_renew, "renew")
+for group in cfg.get("group", []):
+    root_path = path.join(group["name"], "certificates")
+    renew = path.exists(root_path)
+    if run(group["name"], group["domains"], "renew" if path.exists(root_path) else "run"):
+        syslog.syslog("certificates generated for " + group)
+    else: 
+        continue
+    os.chmod(group["name"], 0o700)
     os.chmod(root_path, 0o700)
-    if a and b: syslog.syslog("certificates generated for " + group)

@@ -1,7 +1,18 @@
 email = "uwu@example.org"
 certs = "/var/certs" 
+http_port = 80
+
+[[group]]
+name = "example"
 domains = [
     "example.org",
     "*.example.org",
+    "baz.example.org",
 ]
-http_port = 80
+
+[[group]]
+name = "example_2"
+domains = [
+    "foo.example.org",
+    "bar.example.org"
+]
