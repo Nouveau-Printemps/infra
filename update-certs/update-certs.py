@@ -30,60 +30,45 @@ server = environ.get("ACME_SERVER")
 def is_wildcard(domain):
     return domain[0] == "*"
 
-def gen_base(group, data, star):
+def gen_base(group, data):
     if len(data) == 0: return None
     cmd = ["lego", "--email", cfg.get("email"), "--path", group, "-a", "--pem"]
     if server != None: 
         cmd.append("--server") 
         cmd.append(server)
+    wildcard = False
     for domain in data:
-        if star == is_wildcard(domain): 
-            cmd.append("-d")
-            cmd.append(domain)
-    return cmd
-
-ext = ["crt", "issuer.crt", "key", "json", "pem"]
-
-def move_files(group: str, data):
-    for file in os.listdir(group):
-        for e in ext:
-            m = max(-len(e), -len(file)-1)
-            if file[m:] == e and file[:m-1] in data:
-                os.rename(file, group + "." + e)
+        wildcard = wildcard or is_wildcard(domain)
+        cmd.append("-d")
+        cmd.append(domain)
+    return cmd, wildcard
 
 def run(group, data, cmd):
-    http = gen_base(group, data, False)
-    if http != None:
-        http.append("--http")
-        http.append("--http.port")
-        http.append(":" + str(cfg.get("http_port", 80)))
-        http.append(cmd)
-        print(http)
-        res = subprocess.run(http)
-        if res.returncode != 0:
-            syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stderr))
-            return False
-        move_files(group, data)
-    dns = gen_base(group, data, True)
-    if dns != None:
+    base, has_wildcard = gen_base(group, data)
+    if base == None:
+        return False
+    base.append("--http")
+    base.append("--http.port")
+    base.append(":" + str(cfg.get("http_port", 80)))
+    if has_wildcard:
         if environ["INFOMANIAK_ACCESS_TOKEN_FILE"] == "":
             syslog.syslog(syslog.LOG_ERR, "cannot manage wildcard certificates without a token file")
             exit(3)
-        dns.append("--dns")
-        dns.append("infomaniak")
-        dns.append(cmd)
-        res = subprocess.run(dns, env = environ)
-        if res.returncode != 0:
-            syslog.syslog(syslog.LOG_ERR, "cannot generate wildcard certificates for " + group + ": " + str(res.stderr))
-            return False
-        move_files("_." + group, data)
+        base.append("--dns")
+        base.append("infomaniak")
+    base.append(cmd)
+    print(base)
+    res = subprocess.run(base)
+    if res.returncode != 0:
+        syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stdout))
+        return False
     return True
 
 for group in cfg.get("group", []):
     root_path = path.join(group["name"], "certificates")
     renew = path.exists(root_path)
     if run(group["name"], group["domains"], "renew" if path.exists(root_path) else "run"):
-        syslog.syslog("certificates generated for " + group)
+        syslog.syslog("certificates generated for " + group["name"])
     else: 
         continue
     os.chmod(group["name"], 0o700)
