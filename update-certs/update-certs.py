@@ -13,12 +13,30 @@ if len(args) != 1:
     print("Usage: update-certs <config-file>")
     exit(1)
 
-syslog.openlog("update-certs", facility=syslog.LOG_LOCAL1)
-
 cfg = {}
 
 with open(args[0], "rb") as f:
     cfg = tomllib.load(f)
+
+log = cfg.get("log", {})
+
+facilities = {
+    "user": syslog.LOG_USER,
+    "auth": syslog.LOG_AUTH,
+    "news": syslog.LOG_NEWS,
+    "authpriv": syslog.LOG_AUTHPRIV,
+    "local0": syslog.LOG_LOCAL0,
+    "local1": syslog.LOG_LOCAL1,
+    "local2": syslog.LOG_LOCAL2,
+    "local3": syslog.LOG_LOCAL3,
+    "local4": syslog.LOG_LOCAL4,
+    "local5": syslog.LOG_LOCAL5,
+    "local6": syslog.LOG_LOCAL6,
+    "local7": syslog.LOG_LOCAL7,
+}
+
+syslog.openlog(log.get("ident", "update-certs"),
+               facility=facilities[log.get("facility", "local0")])
 
 os.chdir(cfg.get("certs", "/var/certs"))
 
