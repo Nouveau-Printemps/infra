@@ -1,5 +1,6 @@
 email = "uwu@example.org"
 certs = "/var/certs" 
+infomaniak_token_file = ""
 http_port = 80
 
 [[group]]
@@ -11,7 +12,15 @@ domains = [
 ]
 
 [[group]]
+name = "private"
+folder = "example"
+domains = [
+    "priv.example.org"
+]
+
+[[group]]
 name = "example_2"
+email = "owo@example.org"
 domains = [
     "foo.example.org",
     "bar.example.org"
