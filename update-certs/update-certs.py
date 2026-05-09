@@ -71,7 +71,7 @@ def run(group, email, data, cmd):
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
-    print(base)
+    syslog.syslog(syslog.LOG_INFO, " ".join(cmd))
     res = subprocess.run(base, env=environ)
     if res.returncode != 0:
         syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " +
@@ -91,7 +91,8 @@ for group in cfg.get("group", []):
     syslog.syslog(syslog.LOG_NOTICE, "handling certificates for " + name)
     try:
         if run(folder, group.get("email", email), domains, "renew" if path.exists(file_path + ".key") else "run"):
-            syslog.syslog("certificates sucessfully handled for " + name)
+            syslog.syslog(syslog.LOG_NOTICE,
+                          "certificates sucessfully handled for " + name)
         else:
             continue
         os.chown(name, perm_owner, perm_group)
