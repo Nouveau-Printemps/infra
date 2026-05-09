@@ -24,8 +24,14 @@ os.chdir(cfg.get("certs", "/var/certs"))
 
 email = cfg.get("email")
 
+permissions = cfg.get("permissions", {})
+perm_owner = permissions.get("owner", 0)
+perm_group = permissions.get("group", 0)
+perm_folder = permissions.get("folder", 0o700)
+perm_file = permissions.get("file", 0o600)
+
 environ = os.environ.copy()
-token_file = cfg.get("infomaniak_token_file")
+token_file = cfg.get("token_file")
 if token_file != None and environ.get("INFOMANIAK_ACCESS_TOKEN_FILE") == None:
     environ["INFOMANIAK_ACCESS_TOKEN_FILE"] = token_file
 
@@ -56,8 +62,7 @@ def run(group, email, data, cmd):
     base.append(":" + str(cfg.get("http_port", 80)))
     if has_wildcard:
         if environ.get("INFOMANIAK_ACCESS_TOKEN_FILE") == None and environ.get("INFOMANIAK_ACCESS_TOKEN") == None:
-            syslog.syslog(syslog.LOG_ERR, "cannot manage wildcard certificates without a token")
-            exit(3)
+            raise ValueError("cannot manage wildcard certificates without a token")
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
@@ -82,9 +87,13 @@ for group in cfg.get("group", []):
             syslog.syslog("certificates sucessfully handled for " + name)
         else: 
             continue
-        os.chmod(name, 0o700)
-        os.chmod(root_path, 0o700)
+        os.chown(name, perm_owner, perm_group)
+        os.chmod(name, perm_folder)
+        os.chown(root_path, perm_owner, perm_group)
+        os.chmod(root_path, perm_folder)
         for e in ext:
-            os.chmod(f"{file_path}.{e}", 0o600)
+            p = f"{file_path}.{e}"
+            os.chown(p, perm_owner, perm_group)
+            os.chmod(p, perm_file)
     except Exception as e:
         syslog.syslog(syslog.LOG_ERR, str(e))

@@ -1,7 +1,13 @@
 email = "uwu@example.org"
 certs = "/var/certs" 
-infomaniak_token_file = ""
+token_file = ""
 http_port = 80
+
+[permissions]
+owner = 0
+group = 0
+file = 0o600
+folder = 0o700
 
 [[group]]
 name = "example"
