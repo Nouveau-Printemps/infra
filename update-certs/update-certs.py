@@ -37,14 +37,17 @@ if token_file != None and environ.get("INFOMANIAK_ACCESS_TOKEN_FILE") == None:
 
 server = environ.get("ACME_SERVER")
 
+
 def is_wildcard(domain):
     return domain[0] == "*"
 
+
 def gen_base(group, email, data):
-    if len(data) == 0: return None
+    if len(data) == 0:
+        return None
     cmd = ["lego", "--email", email, "--path", group, "-a", "--pem"]
-    if server != None: 
-        cmd.append("--server") 
+    if server != None:
+        cmd.append("--server")
         cmd.append(server)
     wildcard = False
     for domain in data:
@@ -52,6 +55,7 @@ def gen_base(group, email, data):
         cmd.append("-d")
         cmd.append(domain)
     return cmd, wildcard
+
 
 def run(group, email, data, cmd):
     base, has_wildcard = gen_base(group, email, data)
@@ -62,16 +66,19 @@ def run(group, email, data, cmd):
     base.append(":" + str(cfg.get("http_port", 80)))
     if has_wildcard:
         if environ.get("INFOMANIAK_ACCESS_TOKEN_FILE") == None and environ.get("INFOMANIAK_ACCESS_TOKEN") == None:
-            raise ValueError("cannot manage wildcard certificates without a token")
+            raise ValueError(
+                "cannot manage wildcard certificates without a token")
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
     print(base)
-    res = subprocess.run(base, env = environ)
+    res = subprocess.run(base, env=environ)
     if res.returncode != 0:
-        syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " + group + ": " + str(res.stdout))
+        syslog.syslog(syslog.LOG_ERR, "cannot generate certificates for " +
+                      group + ": " + str(res.stdout))
         return False
     return True
+
 
 ext = ["crt", "issuer.crt", "json", "key", "pem"]
 
@@ -85,7 +92,7 @@ for group in cfg.get("group", []):
     try:
         if run(folder, group.get("email", email), domains, "renew" if path.exists(file_path + ".key") else "run"):
             syslog.syslog("certificates sucessfully handled for " + name)
-        else: 
+        else:
             continue
         os.chown(name, perm_owner, perm_group)
         os.chmod(name, perm_folder)
