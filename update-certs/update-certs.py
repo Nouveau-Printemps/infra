@@ -9,18 +9,21 @@ import tomllib
 
 args = sys.argv[1:]
 
-if len(args) != 1:
-    print("Usage: update-certs <config-file>")
+if len(args) > 1:
+    print("Usage: update-certs [config-file]")
     exit(1)
+
+cfg_path = "/etc/update-certs/config.toml" if len(args) == 0 else args[0]
 
 cfg = {}
 
-with open(args[0], "rb") as f:
+with open(cfg_path, "rb") as f:
     cfg = tomllib.load(f)
 
 log = cfg.get("log", {})
 
 facilities = {
+    "daemon": syslog.LOG_DAEMON,
     "user": syslog.LOG_USER,
     "auth": syslog.LOG_AUTH,
     "news": syslog.LOG_NEWS,
