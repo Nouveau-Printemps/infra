@@ -13,7 +13,7 @@ if len(args) > 1:
     print("Usage: update-certs [config-file]")
     exit(1)
 
-cfg_path = "/etc/update-certs/config.toml" if len(args) == 0 else args[0]
+cfg_path = "/etc/certs/config.toml" if len(args) == 0 else args[0]
 
 cfg = {}
 
@@ -78,7 +78,7 @@ def gen_base(group, email, data):
     return cmd, wildcard
 
 
-def run(group, email, data, cmd):
+def run(group, email, data, cmd, hook):
     base, has_wildcard = gen_base(group, email, data)
     if base == None:
         return False
@@ -92,6 +92,9 @@ def run(group, email, data, cmd):
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
+    if hook != None:
+        base.append("--"+cmd+"-hook")
+        base.append(hook)
     syslog.syslog(syslog.LOG_INFO, " ".join(cmd))
     res = subprocess.run(base, env=environ)
     if res.returncode != 0:
@@ -103,6 +106,8 @@ def run(group, email, data, cmd):
 
 ext = ["crt", "issuer.crt", "json", "key", "pem"]
 
+hook = cfg.get("hook")
+
 for group in cfg.get("group", []):
     name = group["name"]
     folder = group.get("folder", name)
@@ -111,7 +116,7 @@ for group in cfg.get("group", []):
     file_path = path.join(root_path, domains[0])
     syslog.syslog(syslog.LOG_NOTICE, "handling certificates for " + name)
     try:
-        if run(folder, group.get("email", email), domains, "renew" if path.exists(file_path + ".key") else "run"):
+        if run(folder, group.get("email", email), domains, "renew" if path.exists(file_path + ".key") else "run", hook):
             syslog.syslog(syslog.LOG_NOTICE,
                           "certificates sucessfully handled for " + name)
         else:

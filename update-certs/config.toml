@@ -1,13 +1,14 @@
 email = "uwu@example.org"
 certs = "/var/certs" 
 token_file = ""
+hook = "/etc/certs/hook.sh"
 http_port = 80
 
-[permissions]
-owner = 0
-group = 0
-file = 0o600
-folder = 0o700
+#[permissions]
+#owner = 0
+#group = 0
+#file = 0o600
+#folder = 0o700
 
 #[log]
 #ident = "update-certs"
