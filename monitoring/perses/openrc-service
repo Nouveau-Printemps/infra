@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="Perses (podman)"
+description=""
+
+directory="/var/lib/perses"
+
+: ${container_real_user="$(id -u prometheus):$(id -g prometheus)"}
+: ${container_opts="-p 11001:8080 -v $directory:/var/lib/perses -v /etc/perses:/etc/perses --user='$container_real_user' --userns=keep-id"}
+: ${container_image="docker.io/persesdev/perses:v0.53-distroless-debug"}
+: ${perses_opts="--config=/etc/perses/config.yaml --log.level=info"}
+
+command=/usr/bin/podman
+command_args="run $container_opts --name perses --rm $container_image $perses_opts"
+# already rootless
+command_user=root:root
+
+logdir="/var/log/prometheus"
+output_log="$logdir/perses.log"
+error_log="$logdir/perses.log"
+
+depend() {
+        need net localmount cgroups
+        after firewall
+}
+
+start_pre() {
+        checkpath -m 755 -d -o "$container_real_user" "$directory"
+        checkpath -m 755 -d -o "$container_real_user" "$logdir"
+        checkpath -m 700 -d -o "$container_real_user" "/etc/perses"
+}
