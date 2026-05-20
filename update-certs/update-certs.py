@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pathlib
 import os
 import os.path as path
 import syslog
@@ -9,11 +10,25 @@ import tomllib
 
 args = sys.argv[1:]
 
-if len(args) > 1:
-    print("Usage: update-certs [config-file]")
+cmd = {"manage": "manage certificates, can take a path to the config file",
+       "hook": "call hook after successful operations, can take a path to the lockfile"}
+
+if len(args) > 2 or args[0] not in cmd:
+    print("Usage: update-certs cmd [path]")
+    print()
+    print("Availables cmd:")
+    for (k, v) in cmd.items():
+        print("- " + k + ": " + v)
     exit(1)
 
-cfg_path = "/etc/certs/config.toml" if len(args) == 0 else args[0]
+DEFAULT_HOOK_FILE = "certs.lock"
+
+if args[0] == "hook":
+    p = DEFAULT_HOOK_FILE if len(args) == 1 else args[1]
+    pathlib.Path(p).touch(0o755)
+    exit(0)
+
+cfg_path = "/etc/certs/config.toml" if len(args) == 1 else args[1]
 
 cfg = {}
 
@@ -78,7 +93,7 @@ def gen_base(group, email, data):
     return cmd, wildcard
 
 
-def run(group, email, data, cmd, hook):
+def run(group, email, data, cmd):
     base, has_wildcard = gen_base(group, email, data)
     if base == None:
         return False
@@ -92,9 +107,10 @@ def run(group, email, data, cmd, hook):
         base.append("--dns")
         base.append("infomaniak")
     base.append(cmd)
-    if hook != None:
-        base.append("--"+cmd+"-hook")
-        base.append(hook)
+    if cmd == "renew":
+        base.append("--force-cert-domains")
+    base.append("--"+cmd+"-hook")
+    base.append(sys.argv[0] + " hook")
     syslog.syslog(syslog.LOG_INFO, " ".join(cmd))
     res = subprocess.run(base, env=environ)
     if res.returncode != 0:
@@ -106,8 +122,6 @@ def run(group, email, data, cmd, hook):
 
 ext = ["crt", "issuer.crt", "json", "key", "pem"]
 
-hook = cfg.get("hook")
-
 for group in cfg.get("group", []):
     name = group["name"]
     folder = group.get("folder", name)
@@ -116,7 +130,12 @@ for group in cfg.get("group", []):
     file_path = path.join(root_path, domains[0])
     syslog.syslog(syslog.LOG_NOTICE, "handling certificates for " + name)
     try:
-        if run(folder, group.get("email", email), domains, "renew" if path.exists(file_path + ".key") else "run", hook):
+        if run(
+            folder,
+            group.get("email", email),
+            domains,
+            "renew" if path.exists(file_path + ".key") else "run",
+        ):
             syslog.syslog(syslog.LOG_NOTICE,
                           "certificates sucessfully handled for " + name)
         else:
@@ -131,3 +150,14 @@ for group in cfg.get("group", []):
             os.chmod(p, perm_file)
     except Exception as e:
         syslog.syslog(syslog.LOG_ERR, str(e))
+
+hook = cfg.get("hook")
+
+if path.exists(DEFAULT_HOOK_FILE):
+    os.remove(DEFAULT_HOOK_FILE)
+    if hook != None:
+        res = subprocess.run(hook, env=os.environ)
+        if res.returncode != 0:
+            syslog.syslog(syslog.LOG_ERR, "hook failed:" + str(res.stderr))
+        else:
+            syslog.syslog(syslog.LOG_NOTICE, "hook called")
