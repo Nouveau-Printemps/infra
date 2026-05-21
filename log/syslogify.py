@@ -42,13 +42,17 @@ parser.add_argument("-f", "--facility",
 parser.add_argument("-l", "--level",
                     help="set the string representation of a syslog level.",
                     action="append")
+parser.add_argument("-s", "--strip", action="store_true",
+                    help="strip escape codes.")
 parser.add_argument("regex", help="regex to use for parsing the input.")
 parser.add_argument(
     "log", nargs="+", help="log to convert.")
 args = parser.parse_args()
 
-regex: re.Pattern = re.compile(args.regex)
-log = " ".join(args.log)
+log: str = " ".join(args.log)
+
+if args.strip:
+    log = re.sub("\x1b"+r"\[[0-9;]*[mGKHF]", "", log)
 
 for v in args.level if args.level != None else []:
     [k, val] = v.split(":", maxsplit=1)
@@ -59,7 +63,7 @@ if args.ident != None:
 else:
     syslog.openlog(facility=facilities[args.facility])
 
-res: re.Match[str] | None = regex.search(log)
+res: re.Match[str] | None = re.search(args.regex, log)
 if res == None:
     syslog.syslog(syslog.LOG_WARNING, "cannot parse: " + log)
     exit(1)
