@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import syslog
 import argparse
 import re
@@ -53,15 +54,36 @@ input_group.add_argument(
     "log", nargs="*", help="log to convert.")
 args = parser.parse_args()
 
-log: str
+escape = re.compile("\x1b"+r"\[[0-9;]*[mGKHF]")
 
-if args.stdin:
-    log = input()
-else:
-    log = " ".join(args.log)
 
-if args.strip:
-    log = re.sub("\x1b"+r"\[[0-9;]*[mGKHF]", "", log)
+def handle(log):
+    if args.strip:
+        log = escape.sub("", log)
+
+    if len(log) == 0:
+        return
+
+    res: re.Match[str] | None = reg.match(log)
+    if res == None:
+        syslog.syslog(syslog.LOG_WARNING, "cannot parse: " + log)
+        return
+
+    if len(res.groups()) != 2:
+        syslog.syslog(syslog.LOG_WARNING, "invalid regex: " +
+                      args.regex + ", it must have exactly two groups")
+        exit(1)
+
+    raw_level = res.group(1)
+    content = res.group(2)
+
+    level = levels.get(raw_level.lower())
+    if level == None:
+        syslog.syslog(syslog.LOG_WARNING, "invalid log level: " + raw_level)
+        exit(1)
+
+    syslog.syslog(level, content)
+
 
 for v in args.level if args.level != None else []:
     [k, val] = v.split(":", maxsplit=1)
@@ -73,22 +95,10 @@ if args.ident != None:
 else:
     syslog.openlog(facility=facilities[args.facility.lower()])
 
-res: re.Match[str] | None = re.search(args.regex, log)
-if res == None:
-    syslog.syslog(syslog.LOG_WARNING, "cannot parse: " + log)
-    exit(1)
+reg: re.Pattern = re.compile(args.regex)
 
-if len(res.groups()) != 2:
-    syslog.syslog(syslog.LOG_WARNING, "invalid regex: " +
-                  args.regex + ", it must have exactly two groups")
-    exit(1)
-
-raw_level = res.group(1)
-content = res.group(2)
-
-level = levels.get(raw_level.lower())
-if level == None:
-    syslog.syslog(syslog.LOG_WARNING, "invalid log level: " + raw_level)
-    exit(1)
-
-syslog.syslog(level, content)
+if args.stdin:
+    for log in sys.stdin:
+        handle(log)
+else:
+    handle(" ".join(args.log))
