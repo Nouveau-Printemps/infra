@@ -10,6 +10,7 @@ facilities = {
     "auth": syslog.LOG_AUTH,
     "news": syslog.LOG_NEWS,
     "authpriv": syslog.LOG_AUTHPRIV,
+    "mail": syslog.LOG_MAIL,
     "local0": syslog.LOG_LOCAL0,
     "local1": syslog.LOG_LOCAL1,
     "local2": syslog.LOG_LOCAL2,
@@ -68,9 +69,10 @@ for v in args.level if args.level != None else []:
     levels[k.lower()] = levels[val.lower()]
 
 if args.ident != None:
-    syslog.openlog(ident=args.ident, facility=facilities[args.facility])
+    syslog.openlog(ident=args.ident,
+                   facility=facilities[args.facility.lower()])
 else:
-    syslog.openlog(facility=facilities[args.facility])
+    syslog.openlog(facility=facilities[args.facility.lower()])
 
 res: re.Match[str] | None = re.search(args.regex, log)
 if res == None:
