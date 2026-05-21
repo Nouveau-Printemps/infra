@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import syslog
 import argparse
 import re
@@ -44,12 +45,20 @@ parser.add_argument("-l", "--level",
                     action="append")
 parser.add_argument("-s", "--strip", action="store_true",
                     help="strip escape codes.")
+input_group = parser.add_mutually_exclusive_group(required=True)
+input_group.add_argument("-I", "--stdin", action="store_true",
+                         help="takes the input from stdin.")
 parser.add_argument("regex", help="regex to use for parsing the input.")
-parser.add_argument(
-    "log", nargs="+", help="log to convert.")
+input_group.add_argument(
+    "log", nargs="*", help="log to convert.")
 args = parser.parse_args()
 
-log: str = " ".join(args.log)
+log: str
+
+if args.stdin:
+    log = sys.stdin.read()
+else:
+    log = " ".join(args.log)
 
 if args.strip:
     log = re.sub("\x1b"+r"\[[0-9;]*[mGKHF]", "", log)

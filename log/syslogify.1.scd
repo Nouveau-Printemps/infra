@@ -10,6 +10,8 @@ syslogify [*-h*]
 
 syslogify [*-s*] [*-i* _ident_] [*-f* _facility_] [*-l* _level_] _regex_ _log_...
 
+syslogify [*-s*] [*-I*] [*-i* _ident_] [*-f* _facility_] [*-l* _level_] _regex_
+
 # OPTIONS
 
 _regex_
@@ -19,7 +21,13 @@ _regex_
 	The second is the content logged.
 	Everything else is ignored.
 
-_log_ is the log to use.
+_log_
+	is the log to use.
+	Mutually exclusive with *-I*.
+
+*-I*
+	read the log from _stdin_(3).
+	Mutually exclusive with _log_.
 
 *-s* strip escape codes from the input.
 
