@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import syslog
 import argparse
 import re
@@ -57,7 +56,7 @@ args = parser.parse_args()
 log: str
 
 if args.stdin:
-    log = sys.stdin.read()
+    log = input()
 else:
     log = " ".join(args.log)
 
