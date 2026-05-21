@@ -33,7 +33,7 @@ levels = {
 parser = argparse.ArgumentParser(
     "syslogify",
     description="Transforms raw log output into valid syslog entries.",
-    epilog="See syslogify(1) for more information")
+    epilog="See syslogify(1) for more information.")
 parser.add_argument("-i", "--ident", help="set the ident of the syslog entry.")
 parser.add_argument("-f", "--facility",
                     choices=facilities.keys(),

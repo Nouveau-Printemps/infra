@@ -1,0 +1,4 @@
+install:
+    -scdoc < syslogify.1.scd > syslogify.1
+    install -m 755 syslogify.py /usr/local/bin/syslogify
+    -install -D syslogify.1 /usr/local/man/man1/syslogify.1
