@@ -1,0 +1,4 @@
+stalwart_log_parser="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z (\w+) (.*)"
+
+output_logger="syslogify -I -i stalwart -f mail -l warn:warning -l trace:debug '$stalwart_log_parser'"
+error_logger="syslogify -I -i stalwart -f mail -l warn:warning -l trace:debug '$stalwart_log_parser'"

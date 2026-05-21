@@ -7,24 +7,21 @@ description=""
 directory="/var/lib/stalwart"
 config_directory="/etc/stalwart"
 
-: ${stalwart_opts="-p 9002:8080 -p 10025:25 -p 10465:465 -p 10993:993 -v $directory:/var/lib/stalwart -v $config_directory:/etc/stalwart --userns='keep-id:uid=2000,gid=2000'"}
-: ${stalwart_image="docker.io/stalwartlabs/stalwart:v0.16-alpine"}
+: ${container_opts="-p 9002:8080 -p 10025:25 -p 10465:465 -p 10993:993 -v $directory:/var/lib/stalwart -v $config_directory:/etc/stalwart --userns='keep-id:uid=2000,gid=2000' -e STALWART_PUBLIC_URL='https://auth.nouveauprintemps.org'"}
+: ${container_image="docker.io/stalwartlabs/stalwart:v0.16-alpine"}
 
 command=/usr/bin/podman
-command_args="run $stalwart_opts --name stalwart --rm $stalwart_image"
+command_args="run $container_opts --name stalwart --rm $container_image"
 command_user=stalwart:stalwart
 
-output_logger="logger -e -t '${RC_SVNAME}' -p mail.info"
-error_logger="logger -e -t '${RC_SVNAME}' -p mail.info"
-
 depend() {
-        need net localmount cgroups
-        after firewall
-        user logger
+    need net localmount cgroups
+    after firewall
+    use logger
 }
 
 start_pre() {
-        checkpath -d -m 755 -o "$command_user" "$directory"
-        checkpath -d -m 700 -o "$command_user" "$config_directory"
-        checkpath -d -m 700 -o "$command_user" "$config_directory/certs"
+    checkpath -d -m 755 -o "$command_user" "$directory"
+    checkpath -d -m 700 -o "$command_user" "$config_directory"
+    checkpath -d -m 700 -o "$command_user" "$config_directory/certs"
 }
