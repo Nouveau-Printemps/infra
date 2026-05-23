@@ -20,6 +20,10 @@ _regex_
 	The first contains the log level.
 	The second is the content logged.
 	Everything else is ignored.
+	If you use an alternate (*|*), each part must have exactly two groups, e.g.
+		```
+		(?:s6-rc: (\\w+): (.*))|(?:\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} (\\w+) (.*))
+		```
 
 _log_
 	is the log to use.
@@ -73,6 +77,18 @@ python syslogify.py -s -l warn:warning ".* \[(\w+)] (.*)" $(printf "\\e[38;5;244
 
 logs "internal/mux.go:93 - invalid request uri=/.git/config status=429 duration=4.248µs" in the user's facility with log
 level WARNING.
+
+```
+python syslogify.py '(?:s6-rc: (\\w+): (.*))|(?:\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} (\\w+) (.*))' s6-rc: info: service legacy-services successfully started
+```
+
+logs "service legacy-services successfully started" while
+
+```
+python syslogify.py '(?:s6-rc: (\\w+): (.*))|(?:\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} (\\w+) (.*))' 2026/05/22 22:02:43 INFO knot/server/db: migration applied successfully migration=add-repo-name-to-repo-keys
+```
+
+logs "knot/server/db: migration applied successfully migration=add-repo-name-to-repo-keys"
 
 # SEE ALSO
 

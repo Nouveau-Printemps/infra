@@ -69,13 +69,22 @@ def handle(log):
         syslog.syslog(syslog.LOG_WARNING, "cannot parse: " + log)
         return
 
-    if len(res.groups()) != 2:
+    groups = res.groups()
+
+    if len(groups) % 2 != 0 or len(groups) == 0:
         syslog.syslog(syslog.LOG_WARNING, "invalid regex: " +
-                      args.regex + ", it must have exactly two groups")
+                      args.regex + ", it must have exactly 2(n+1) groups")
         exit(1)
 
-    raw_level = res.group(1)
-    content = res.group(2)
+    while len(groups) > 0 and groups[0] == None:
+        groups = groups[2:]
+
+    if len(groups) == 0:
+        syslog.syslog(syslog.LOG_WARNING, "cannot extract groups from " + log)
+        return
+
+    raw_level = groups[0]
+    content = groups[1]
 
     level = levels.get(raw_level.lower())
     if level == None:
