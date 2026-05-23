@@ -1,0 +1,46 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="Tangled Knot (podman)"
+description=""
+
+directory="/var/git"
+
+# knot_hostname must be set in conf.d/knot
+# knot_owner must be set in conf.d/knot
+
+: ${container_real_user="git"}
+: ${container_real_group="git"}
+: ${container_opts="-p 9004:5555 -p 2222:22 \
+        -v $directory/repositories:/home/git/repositories \
+        -v $directory/keys:/etc/ssh/keys \
+        -v $directory/data:/app \
+        -e KNOT_SERVER_HOSTNAME='$knot_hostname'" \
+        -e KNOT_SERVER_OWNER='$knot_owner' \
+        -e KNOT_SERVER_DB_PATH='/app/knot.db' \
+        -e KNOT_REPO_SCAN_PATH='/home/git/repositories' \
+        -e KNOT_SERVER_INTERNAL_LISTEN_ADDR='localhost:5444' \
+        --userns='auto:uidmapping=1000:$(id -u $container_real_user),gidmapping=1000:$(id -g $container_real_group)'}
+: ${container_image="atcr.io/tangled.org/knot:latest"}
+
+command=/usr/bin/podman
+command_args="run $container_opts --name knot --rm $container_image"
+command_user=root:root
+
+output_log="/var/log/knot.log"
+error_log="/var/log/knot.log"
+
+depend() {
+        need net localmount cgroups
+        after firewall
+}
+
+start_pre() {
+        user="$container_real_user:$container_real_group"
+        checkpath -d -m 700 -o "$user" "$directory"
+        checkpath -d -m 700 -o "$user" "$directory/repositories"
+        checkpath -d -m 700 -o "$user" "$directory/keys"
+        checkpath -d -m 700 -o "$user" "$directory/data"
+        checkpath -f -m 750 -o "$user" "$output_log"
+        checkpath -f -m 750 -o "$user" "$error_log"
+}
