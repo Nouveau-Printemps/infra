@@ -140,8 +140,6 @@ for group in cfg.get("group", []):
                           "certificates sucessfully handled for " + name)
         else:
             continue
-        os.chown(name, perm_owner, perm_group)
-        os.chmod(name, perm_folder)
         os.chown(root_path, perm_owner, perm_group)
         os.chmod(root_path, perm_folder)
         for e in ext:
