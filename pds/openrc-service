@@ -1,0 +1,30 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="Bluesky PDS (podman)"
+description=""
+
+directory="/var/lib/pds"
+
+# knot_hostname must be set in conf.d/knot
+# knot_owner must be set in conf.d/knot
+
+: ${container_opts="-p 9005:3000 \
+        -v bluesky-pds:/pds \
+        --env-file '/etc/atproto/pds.env'
+        --tmpfs /tmp:rw,size=512m,noexec"}
+: ${container_image="atcr.io/anhgelus.world/bluesky-pds-repack:latest"}
+
+command=/usr/bin/podman
+command_args="run $container_opts --name bluesky-pds --rm $container_image"
+command_user=pds:pds
+
+depend() {
+        need net localmount cgroups
+        after firewall
+}
+
+start_pre() {
+        checkpath -d -m 640 -o "$command_user" "$directory"
+        checkpath -f -m 640 -o "$command_user" "/var/log/pds.log"
+}
