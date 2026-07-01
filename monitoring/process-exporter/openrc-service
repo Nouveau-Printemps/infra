@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="process-exporter"
+description=""
+
+config_file="/etc/prometheus/process-exporter.yml"
+command=/usr/local/bin/process-exporter
+command_args="-web.listen-address ':11012' -config.path '$config_file'"
+command_user=root:root
+directory="/var/lib/prometheus"
+
+logdir="/var/log/prometheus"
+output_log="$logdir/process-exporter.log"
+error_log="$logdir/process-exporter.log"
+
+depend() {
+        need net localmount
+        after firewall
+}
+
+start_pre() {
+        user="prometheus:prometheus"
+        checkpath -f -o "$user" "$output_log"
+        checkpath -f -o "$user" "$error_log"
+        checkpath -f -o "$user" "$config_file"
+}
