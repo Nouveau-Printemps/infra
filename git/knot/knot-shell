@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cd /var/git/repositories && exec git-shell -c "$SSH_ORIGINAL_COMMAND"

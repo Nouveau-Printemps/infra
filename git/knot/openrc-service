@@ -1,28 +1,20 @@
 #!/sbin/openrc-run
 supervisor=supervise-daemon
 
-name="Tangled Knot (podman)"
+name="Tangled Knot"
 description=""
 
 directory="/var/git"
 
-# knot_hostname must be set in conf.d/knot
-# knot_owner must be set in conf.d/knot
-
-: ${container_opts="-p 9004:5555 -p 2222:22 \
-        -v knot-repositories:/home/git \
-        -v knot-keys:/etc/ssh/keys \
-        -v knot-data:/app \
-        -e KNOT_SERVER_HOSTNAME='$knot_hostname' \
-        -e KNOT_SERVER_OWNER='$knot_owner' \
-        -e KNOT_SERVER_DB_PATH='/app/knot.db' \
-        -e KNOT_REPO_SCAN_PATH='/home/git/repositories' \
-        -e KNOT_SERVER_INTERNAL_LISTEN_ADDR='localhost:5444'"}
-: ${container_image="atcr.io/tangled.org/knot:latest"}
-
-command=/usr/bin/podman
-command_args="run $container_opts --name knot --rm $container_image"
+command=/usr/local/bin/knot
+command_args="server"
 command_user=git:git
+
+export KNOT_REPO_SCAN_PATH
+export KNOT_SERVER_HOSTNAME
+export KNOT_SERVER_OWNER
+export KNOT_SERVER_DB_PATH
+export KNOT_SERVER_LISTEN_ADDR
 
 depend() {
         need net localmount cgroups
@@ -30,5 +22,7 @@ depend() {
 }
 
 start_pre() {
-        checkpath -f -m 640 -o "$command_user" "/var/log/knot.log"
+    checkpath -d -m 750 -o "$command_user" $KNOT_REPO_SCAN_PATH
+    checkpath -f -m 750 -o "$command_user" $KNOT_SERVER_DB_PATH
+    checkpath -f -m 640 -o "git:atproto" "/var/log/knot.log"
 }

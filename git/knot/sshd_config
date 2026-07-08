@@ -1,0 +1,5 @@
+Match User git
+    AuthorizedKeysCommand /etc/ssh/knot-keys
+    ForceCommand /etc/ssh/knot-shell
+    AuthorizedKeysCommandUser nobody
+    KbdInteractiveAuthentication no
