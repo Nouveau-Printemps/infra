@@ -8,6 +8,7 @@ directory="/var/lib/pds-operator"
 
 : ${container_opts="-p 9006:8787 \
         -v '$directory:/data' \
+        -v '/etc/atproto/pds-operator.d/labelers.json:/app/server/labelers.json' \
         --env-file '/etc/atproto/pds-operator.env'
         --tmpfs /tmp:rw,size=512m,noexec"}
 : ${container_image="atcr.io/anhgelus.world/pds-operator-repack:latest"}

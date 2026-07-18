@@ -1,0 +1,34 @@
+[
+  {
+    "name": "skywatch blue",
+    "did": "did:plc:e4elbtctnfqocyfcml6h2lf7",
+    "labels": [
+      "platform-manipulation",
+      "suspect-inauthentic",
+      "nazi-symbolism",
+      "inauthentic-fundraising",
+      "engagement-abuse",
+      "follow-farming",
+      "bulk-following"
+    ]
+  },
+  {
+    "name": "hailey",
+    "did": "did:plc:saslbwamakedc4h6c5bmshvz",
+    "labels": [
+        "spam",
+        "men-facet-abuse",
+        "mass-follow-mid",
+        "mass-follow-high",
+        "shopping-spam",
+        "general-spam",
+        "reply-link-spam",
+        "new-acct-replies",
+        "some-blocks",
+        "mass-blocks",
+        "many-handle-chgs",
+        "suss-handle-change",
+        "coordinated-abuse"
+    ]
+  }
+]
