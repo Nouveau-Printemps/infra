@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="PDS Operator (podman)"
+description=""
+
+directory="/var/lib/pds-operator"
+
+: ${container_opts="-p 9006:8787 \
+        -v '$directory:/data' \
+        --env-file '/etc/atproto/pds-operator.env'
+        --tmpfs /tmp:rw,size=512m,noexec"}
+: ${container_image="atcr.io/anhgelus.world/pds-operator-repack:latest"}
+
+command=/usr/bin/podman
+command_args="run $container_opts --add-host=nouveauprintemps.org:host-gateway --name pds-operator --rm $container_image"
+command_user=pds:pds
+
+depend() {
+        need net localmount cgroups
+        after firewall
+}
+
+start_pre() {
+        checkpath -d -m 640 -o "$command_user" "$directory"
+        checkpath -f -m 640 -o "pds:atproto" "/var/log/pds-operator.log"
+}
