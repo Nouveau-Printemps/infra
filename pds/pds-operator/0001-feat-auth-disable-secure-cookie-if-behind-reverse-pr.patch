@@ -1,0 +1,27 @@
+From d0fc285b2d2091e568a51a7c098ee990bce3e057 Mon Sep 17 00:00:00 2001
+From: Anhgelus Morhtuuzh <william@herges.fr>
+Date: Sun, 19 Jul 2026 00:21:23 +0200
+Subject: [PATCH] feat(auth): disable secure cookie if behind reverse proxy
+
+---
+ server/src/index.ts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/server/src/index.ts b/server/src/index.ts
+index c48b7e1..44d7159 100644
+--- a/server/src/index.ts
++++ b/server/src/index.ts
+@@ -69,8 +69,9 @@ await app.register(fastifyHelmet, {
+ await app.register(fastifyCookie);
+ await app.register(fastifySession, {
+   secret: SESSION_SECRET!,
++  cookieName: "sessionId",
+   cookie: {
+-    secure: isProd,
++    secure: isProd && process.env.HOST != "0.0.0.0",
+     httpOnly: true,
+     sameSite: "lax",
+     maxAge: 1000 * 60 * 60 * 12,
+-- 
+2.54.0
+

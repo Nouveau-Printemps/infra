@@ -3,7 +3,13 @@ WORKDIR /app
 
 RUN apk add --no-cache git
 
+ARG GIT_COMMITTER_NAME="Anhgelus Morhtuuzh"
+ARG GIT_COMMITTER_EMAIL="me@anhgelus.world"
+
 RUN git clone "https://tangled.org/brookie.blog/pds-operator" .
+ADD *.patch .
+RUN for p in $(ls *.patch); do git am < $p; done
+
 RUN cd web && npm ci && npm run build
 RUN cd server && npm ci && npm run build && npm prune --omit=dev
 
