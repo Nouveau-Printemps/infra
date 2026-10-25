@@ -78,10 +78,10 @@ def is_wildcard(domain):
     return domain[0] == "*"
 
 
-def gen_base(group, email, data):
+def gen_base(group, email, data, cmd):
     if len(data) == 0:
         return None
-    cmd = ["lego", "--email", email, "--path", group, "-a", "--pem"]
+    cmd = ["lego", cmd, "--email", email, "--path", group, "-a", "--pem"]
     if server != None:
         cmd.append("--server")
         cmd.append(server)
@@ -94,22 +94,23 @@ def gen_base(group, email, data):
 
 
 def run(group, email, data, cmd):
-    base, has_wildcard = gen_base(group, email, data)
+    base, has_wildcard = gen_base(group, email, data, cmd)
     if base == None:
         return False
-    base.append("--http")
-    base.append("--http.port")
-    base.append(":" + str(cfg.get("http_port", 80)))
-    if has_wildcard:
+    if not has_wildcard:
+        base.append("--http")
+        base.append("--http.address")
+        base.append(":" + str(cfg.get("http_port", 80)))
+    else:
         if environ.get("INFOMANIAK_ACCESS_TOKEN_FILE") == None and environ.get("INFOMANIAK_ACCESS_TOKEN") == None:
             raise ValueError(
                 "cannot manage wildcard certificates without a token")
         base.append("--dns")
         base.append("infomaniak")
-    base.append(cmd)
-    if cmd == "renew":
-        base.append("--force-cert-domains")
-    base.append("--"+cmd+"-hook")
+        base.append("--dns.resolvers")
+        base.append("9.9.9.9:53,1.1.1.1:53,8.8.8.8:53")
+        # base.append("--force-cert-domains")
+    base.append("--deploy-hook")
     base.append(sys.argv[0] + " hook")
     syslog.syslog(syslog.LOG_INFO, " ".join(cmd))
     res = subprocess.run(base, env=environ)
@@ -134,12 +135,14 @@ for group in cfg.get("group", []):
             folder,
             group.get("email", email),
             domains,
-            "renew" if path.exists(file_path + ".key") else "run",
+            "run",
         ):
             syslog.syslog(syslog.LOG_NOTICE,
                           "certificates sucessfully handled for " + name)
         else:
             continue
+        os.chown(name, perm_owner, perm_group)
+        os.chmod(name, perm_folder)
         os.chown(root_path, perm_owner, perm_group)
         os.chmod(root_path, perm_folder)
         for e in ext:
