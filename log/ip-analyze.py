@@ -16,6 +16,7 @@ ipv4 = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
 with open(file_path, "r") as f:
     found: dict[str, int] = {}
     for line in f.readlines():
+        line = line.lower()
         if not "invalid" in line and not "failed" in line:
             continue
         ips = ipv4.findall(line)
