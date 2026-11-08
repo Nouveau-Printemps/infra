@@ -3,21 +3,35 @@ from functools import reduce
 import os
 import sys
 import re
+import argparse
 
-if len(sys.argv) < 2 or len(sys.argv) > 3:
-    print("Usage: ip-analyze <file> [times]")
+parser = argparse.ArgumentParser(
+    "ip-analyze",
+    description="")
+parser.add_argument("-f", "--format", action="append",
+                    help="regex to use to verify each line")
+
+input_group = parser.add_argument_group("input")
+input_group.add_argument("file", help="file to parse")
+input_group.add_argument("times", help="number of times before reporting ip")
+
+args = parser.parse_args()
+
+if args.file == None or args.format == None:
+    parser.print_help()
     exit(1)
 
-file_path = sys.argv[1]
-times = int(sys.argv[2]) if len(sys.argv) == 3 else 5
+file_path = args.file
+times = int(args.times) if args.times != None else 5
+
+formats = [re.compile(f) for f in args.format]
 
 ipv4 = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
 
 with open(file_path, "r") as f:
     found: dict[str, int] = {}
     for line in f.readlines():
-        line = line.lower()
-        if not "invalid" in line and not "failed" in line:
+        if not reduce(lambda acc, form: acc or form.search(line) != None, formats, False):
             continue
         ips = ipv4.findall(line)
         if len(ips) < 1:
