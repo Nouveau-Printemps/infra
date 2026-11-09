@@ -107,7 +107,7 @@ else:
 
 reg: re.Pattern = re.compile(args.regex)
 
-if args.log[0] == "-":
+if len(args.log) == 0 or args.log[0] == "-":
     for log in sys.stdin:
         handle(log)
 else:

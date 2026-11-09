@@ -8,7 +8,7 @@ syslogify - transforms raw logs into syslog entries.
 
 syslogify [*-h*]
 
-syslogify [*-s*] [*-i* _ident_] [*-f* _facility_] [*-l* _level_] _regex_ _log_...
+syslogify [*-s*] [*-i* _ident_] [*-f* _facility_] [*-l* _level_] _regex_ [_log_...]
 
 # OPTIONS
 
@@ -25,7 +25,7 @@ _regex_
 
 _log_
 	is the log to use.
-	Use `-` if you want to read the log from _stdin_(3).
+	Read from _stdin_(3) if the result is omitted or if it is `-`.
 
 *-s* strip escape codes from the input.
 
