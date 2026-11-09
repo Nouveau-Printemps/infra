@@ -35,7 +35,7 @@ levels = {
 parser = argparse.ArgumentParser(
     "syslogify",
     description="Transforms raw log output into valid syslog entries.",
-    epilog="See syslogify(1) for more information.")
+    epilog="See syslogify(8) for more information.")
 parser.add_argument("-i", "--ident", help="set the ident of the syslog entry.")
 parser.add_argument("-f", "--facility",
                     choices=facilities.keys(),
@@ -46,12 +46,8 @@ parser.add_argument("-l", "--level",
                     action="append")
 parser.add_argument("-s", "--strip", action="store_true",
                     help="strip escape codes.")
-input_group = parser.add_mutually_exclusive_group(required=True)
-input_group.add_argument("-I", "--stdin", action="store_true",
-                         help="takes the input from stdin.")
 parser.add_argument("regex", help="regex to use for parsing the input.")
-input_group.add_argument(
-    "log", nargs="*", help="log to convert.")
+parser.add_argument("log", nargs="*", help="log to convert.")
 args = parser.parse_args()
 
 escape = re.compile("\x1b"+r"\[[0-9;]*[mGKHF]")
@@ -66,12 +62,15 @@ def handle(log):
 
     res: re.Match[str] | None = reg.match(log)
     if res == None:
+        print("cannot parse:", log)
         syslog.syslog(syslog.LOG_WARNING, "cannot parse: " + log)
         return
 
     groups = res.groups()
 
     if len(groups) % 2 != 0 or len(groups) == 0:
+        print(
+            f"invalid regex: {args.regex}, it must have exactly 2(n+1) groups.")
         syslog.syslog(syslog.LOG_WARNING, "invalid regex: " +
                       args.regex + ", it must have exactly 2(n+1) groups")
         exit(1)
@@ -80,6 +79,7 @@ def handle(log):
         groups = groups[2:]
 
     if len(groups) == 0:
+        print("cannot extract groups from", log)
         syslog.syslog(syslog.LOG_WARNING, "cannot extract groups from " + log)
         return
 
@@ -88,6 +88,7 @@ def handle(log):
 
     level = levels.get(raw_level.lower())
     if level == None:
+        print("invalid log level:", raw_level)
         syslog.syslog(syslog.LOG_WARNING, "invalid log level: " + raw_level)
         exit(1)
 
@@ -106,7 +107,7 @@ else:
 
 reg: re.Pattern = re.compile(args.regex)
 
-if args.stdin:
+if args.log[0] == "-":
     for log in sys.stdin:
         handle(log)
 else:
