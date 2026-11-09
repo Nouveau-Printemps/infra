@@ -1,4 +1,4 @@
-SYSLOGIFY(1)
+SYSLOGIFY(8)
 
 # NAME
 

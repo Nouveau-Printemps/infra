@@ -2,7 +2,7 @@
 
 Simple python scripts that transforms raw logs into syslog entries.
 
-Read the help with `-h` or at `syslogify(1)`.
+Read the help with `-h` or at `syslogify(8)`.
 
 ## Install
 
@@ -37,4 +37,28 @@ You can set custom name for the level with `-l`:
 syslogify -l warn:warning -l trace:debug "(\w+) (.+)" WARN This is a warning
 ```
 
-See `syslogify(1)` for more information.
+See `syslogify(8)` for more information.
+
+---
+
+# ip-analyze
+
+Simple script that returns the list of IPv4 contained in a file.
+You can filter them with regular expressions.
+
+## Usage
+
+Returns the list of IP that appears at least 15 times in a line containing `invalid user`.
+```shell
+$ ip-analyze -f "invalid user" /var/log/auth.log 15
+0.1.2.3
+0.2.3.4
+```
+
+Returns the list of IP that appears at least 3 times in a line containing `invalid user` or matching `failed auth$`.
+```shell
+$ ip-analyze -f "invalid user" -f "failed auth$" /var/log/auth.log 3
+0.1.2.3
+0.2.3.4
+0.1.7.5
+```

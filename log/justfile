@@ -1,4 +1,5 @@
 install:
-    -scdoc < syslogify.1.scd > syslogify.1
+    -scdoc < syslogify.8.scd > syslogify.8
     install -m 755 syslogify.py /usr/local/bin/syslogify
-    -install -D syslogify.1 /usr/local/man/man1/syslogify.1
+    install -m 755 ip-analyze.py /usr/local/bin/ip-analyze
+    -install -D syslogify.8 /usr/local/man/man8/
